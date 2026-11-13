@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de" data-theme="light">
+<html lang="de">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -20,7 +20,7 @@
     try {
       var s = JSON.parse(localStorage.getItem('unikram:v1') || '{}').settings || {};
       var dark = s.theme === 'dark' || ((!s.theme || s.theme === 'system') && matchMedia('(prefers-color-scheme: dark)').matches);
-      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      if (dark) document.documentElement.classList.add('dark');
       if (s.accent) document.documentElement.style.setProperty('--accent', s.accent);
     } catch (e) {}
   </script>

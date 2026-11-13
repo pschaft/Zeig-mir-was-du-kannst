@@ -3,12 +3,14 @@ import { store } from './core/store.js';
 import { morph } from './core/morph.js';
 import { html, raw } from './core/html.js';
 import { icon, LOGO_SVG } from './core/icons.js';
-import { parseHash, matchRoute, navigate } from './core/router.js';
+import { parseHash, matchRoute, navigate, useMemoryRouting, isMemoryRouting } from './core/router.js';
 import { toast, menu, anyDialogOpen } from './core/ui.js';
 import { today } from './core/date.js';
 import { fmtClock } from './core/format.js';
 import { timer, initTimer, onTick, remainingMs } from './services/timer.js';
 import { initReminders } from './services/reminders.js';
+import { sync } from './services/sync.js';
+import { EMBED } from './core/env.js';
 import { dueCount } from './logic/tasks.js';
 import { dueCounts } from './logic/srs.js';
 import { applyRecurring } from './logic/budget.js';
@@ -75,13 +77,16 @@ let routeToken = 0;
 const darkMQ = matchMedia('(prefers-color-scheme: dark)');
 function applyTheme() {
   const { theme, accent } = store.state.settings;
-  const dark = theme === 'dark' || (theme === 'system' && darkMQ.matches);
   const root = document.documentElement;
-  root.dataset.theme = dark ? 'dark' : 'light';
+  // Bei "System" gewinnt ein vom einbettenden Viewer gesetztes data-theme vor der OS-Einstellung
+  const host = root.getAttribute('data-theme');
+  const dark = theme === 'dark' || (theme === 'system' && (host === 'dark' || host === 'light' ? host === 'dark' : darkMQ.matches));
+  root.classList.toggle('dark', dark);
   root.style.setProperty('--accent', accent || '#5b5bd6');
   document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute('content', dark ? '#0d0e12' : '#f4f5f9'));
 }
 darkMQ.addEventListener?.('change', applyTheme);
+new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
 /* ------------------------------ Kontext ------------------------------ */
 
@@ -250,6 +255,15 @@ function dispatch(el, e, attr) {
   }
 }
 
+// Im Speicher-Modus interne Links abfangen (die Adresse bleibt unverändert)
+document.addEventListener('click', (e) => {
+  if (!isMemoryRouting() || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey) return;
+  const a = e.target.closest('a[href^="#/"]');
+  if (!a || a.closest('[data-action]')) return;
+  e.preventDefault();
+  navigate(a.getAttribute('href'));
+});
+
 document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-action]');
   if (!el || el.closest('dialog:not(.palette)') && !el.closest('[data-delegate]')) return;
@@ -310,10 +324,11 @@ document.addEventListener('keydown', (e) => {
 
 function maintenance() {
   const s = store.state;
-  if (s.budget.recurring.some((r) => r.active)) {
+  // Nur schreiben, wenn wirklich etwas zu buchen ist (sonst würde jede Öffnung als Änderung zählen)
+  if (s.budget.recurring.some((r) => r.active) && applyRecurring(structuredClone(s.budget)) > 0) {
     let added = 0;
     store.update((st) => { added = applyRecurring(st.budget); });
-    if (added) console.info(`[Unikram] ${added} Fixkosten gebucht`);
+    console.info(`[Unikram] ${added} Fixkosten gebucht`);
   }
 }
 
@@ -343,7 +358,7 @@ onTick(() => {
 addEventListener('hashchange', handleRoute);
 
 function registerSW() {
-  if (!('serviceWorker' in navigator) || !/^https?:$/.test(location.protocol)) return;
+  if (EMBED || !('serviceWorker' in navigator) || !/^https?:$/.test(location.protocol)) return;
   let framed = false;
   try { framed = window.top !== window.self; } catch { framed = true; }
   if (framed) return;
@@ -365,6 +380,7 @@ function registerSW() {
   });
 }
 
+if (EMBED) useMemoryRouting(location.hash.startsWith('#/') ? location.hash : '');
 applyTheme();
 maintenance();
 initTimer();
@@ -372,6 +388,14 @@ initReminders();
 renderShell();
 handleRoute();
 registerSW();
+if (EMBED) {
+  document.documentElement.classList.add('embed');
+  sync.onChange(() => { renderView(); });
+  sync.init().catch((e) => console.warn('[Unikram-Sync]', e));
+}
+addEventListener('unikram:synced', () => {
+  if (store.state.profile.onboarded && parseHash().path === 'willkommen') navigate('heute', { replace: true });
+});
 
 if (!store.persistent) {
   setTimeout(() => toast('Speichern nicht möglich (privater Modus?) – Daten gehen beim Schließen verloren.', { type: 'error', timeout: 8000 }), 800);

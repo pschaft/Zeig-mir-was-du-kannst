@@ -11,6 +11,7 @@ import { confetti } from '../core/confetti.js';
 import { withUndo, removeWithUndo } from '../core/undo.js';
 import { shares, balances, settle, groupTotal, choreAssignments } from '../logic/split.js';
 import { COURSE_COLORS } from '../logic/state.js';
+import { EMBED } from '../core/env.js';
 
 const EMOJIS = ['🏠', '🏡', '✈️', '🏕️', '🍕', '🎉', '🚗', '⛷️', '🏖️', '📚'];
 const colorOf = (g, id) => COURSE_COLORS[Math.max(0, g.members.findIndex((m) => m.id === id)) % COURSE_COLORS.length];
@@ -173,16 +174,19 @@ async function paymentForm(gid, id, preset = {}) {
 async function shareGroup(gid) {
   const g = getGroup(gid);
   const code = await encodeShare({ v: 1, group: g });
-  const url = `${location.origin}${location.pathname}#/wg/import?d=${code}`;
+  // Eingebettet gibt es keine teilbare Adresse → nur den Code teilen
+  const url = EMBED ? code : `${location.origin}${location.pathname}#/wg/import?d=${code}`;
   const body = html`
-    <p class="muted small mb-12">Schick den Link deinen Mitbewohner:innen. Beim Öffnen können sie die Gruppe mit allen Ausgaben in ihr Unikram übernehmen – ganz ohne Server oder Account. Neue Ausgaben teilt ihr einfach mit einem neuen Link.</p>
+    <p class="muted small mb-12">${EMBED
+      ? 'Schick diesen Code deinen Mitbewohner:innen. Sie fügen ihn in Unikram unter WG-Kasse → „Importieren“ ein und haben die Gruppe mit allen Ausgaben – ganz ohne Server.'
+      : 'Schick den Link deinen Mitbewohner:innen. Beim Öffnen können sie die Gruppe mit allen Ausgaben in ihr Unikram übernehmen – ganz ohne Server oder Account. Neue Ausgaben teilt ihr einfach mit einem neuen Link.'}</p>
     <textarea class="textarea mono" rows="4" readonly style="font-size:12px" data-link>${url}</textarea>
     <p class="tiny muted mt-8">${plural(g.expenses.length, 'Ausgabe', 'Ausgaben')} · ${url.length.toLocaleString('de-DE')} Zeichen</p>`;
-  const foot = html`${navigator.share ? html`<button class="btn btn-soft" data-native>${icon('share')} Teilen …</button>` : ''}<span class="spacer"></span><button class="btn btn-primary" data-copy>${icon('copy')} Link kopieren</button>`;
+  const foot = html`${navigator.share && !EMBED ? html`<button class="btn btn-soft" data-native>${icon('share')} Teilen …</button>` : ''}<span class="spacer"></span><button class="btn btn-primary" data-copy>${icon('copy')} ${EMBED ? 'Code' : 'Link'} kopieren</button>`;
   sheet({
     title: `„${g.name}“ teilen`, body, foot,
     onMount: (el, close) => {
-      el.querySelector('[data-copy]').addEventListener('click', async () => { if (await copyText(url)) { toast('Link kopiert', { type: 'success' }); close(); } });
+      el.querySelector('[data-copy]').addEventListener('click', async () => { if (await copyText(url)) { toast(EMBED ? 'Code kopiert' : 'Link kopiert', { type: 'success' }); close(); } else el.querySelector('[data-link]').select(); });
       el.querySelector('[data-native]')?.addEventListener('click', async () => { try { await navigator.share({ title: `WG-Kasse: ${g.name}`, text: `Unsere WG-Kasse „${g.name}“ in Unikram`, url }); close(); } catch { /* abgebrochen */ } });
       el.querySelector('[data-link]').addEventListener('focus', (e) => e.target.select());
     },
@@ -209,6 +213,18 @@ async function importFromLink(code) {
   });
   toast('Gruppe übernommen 🎉', { type: 'success' });
   navigate(`wg/${g.id}`, { replace: true });
+}
+
+async function importDialog() {
+  const v = await form({
+    title: 'Gruppe importieren',
+    intro: 'Füge den Link oder Code ein, den dir jemand aus deiner WG geschickt hat.',
+    fields: [{ name: 'code', label: 'Link oder Code', type: 'textarea', rows: 4, required: true, autofocus: true, placeholder: 'https://…#/wg/import?d=… oder z…' }],
+    submitLabel: 'Weiter',
+  });
+  if (!v) return;
+  const m = /[?&]d=([^&\s]+)/.exec(v.code);
+  importFromLink((m ? m[1] : v.code).trim());
 }
 
 /* ------------------------------ Putzplan ------------------------------ */
@@ -270,7 +286,7 @@ function listView(state) {
   return html`
     <header class="page-head">
       <div class="titles"><h1>WG-Kasse</h1><p class="page-sub">Gemeinsame Kosten fair teilen – für WG, Urlaub oder Projektgruppe</p></div>
-      <div class="page-actions"><button class="btn btn-primary" data-action="new-group">${icon('plus')}<span class="hide-mobile">Gruppe</span></button></div>
+      <div class="page-actions"><button class="btn btn-outline" data-action="import-group">${icon('download')}<span class="hide-mobile">Importieren</span></button><button class="btn btn-primary" data-action="new-group">${icon('plus')}<span class="hide-mobile">Gruppe</span></button></div>
     </header>
     ${state.groups.length ? html`<div class="grid grid-2">${state.groups.map((g) => {
       const bal = balances(g).get(g.meId) ?? 0;
@@ -377,6 +393,7 @@ export default {
   },
   actions: {
     'new-group': () => groupForm(null),
+    'import-group': () => importDialog(),
     tab: (c, el) => { c.ui.tab = el.dataset.t; c.rerender(); },
     'new-gexp': (c, el) => expenseForm(el.dataset.id, null),
     'edit-gexp': (c, el) => expenseForm(el.dataset.id, el.dataset.x),

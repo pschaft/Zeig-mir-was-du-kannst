@@ -260,7 +260,7 @@ END:VCALENDAR`;
     await go('einstellungen');
     await page.click('[data-action=theme][data-t=dark]');
     await page.waitForTimeout(100);
-    assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), 'dark');
+    assert.equal(await page.evaluate(() => document.documentElement.classList.contains('dark')), true);
   });
 
   await step('Backup-Export liefert gültiges JSON', async () => {

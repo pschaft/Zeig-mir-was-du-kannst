@@ -3,7 +3,8 @@ import { store } from '../core/store.js';
 import { html } from '../core/html.js';
 import { icon } from '../core/icons.js';
 import { form, toast, confirm, menu, sheet } from '../core/ui.js';
-import { uid, download, pickFile, sortBy } from '../core/util.js';
+import { uid, pickFile, sortBy } from '../core/util.js';
+import { openExternal } from '../services/files.js';
 import { today, addDays, startOfWeek, weekday, isoWeek, fmtDate, WD, WEEKDAYS, timeToMin, nowMinutes, relDay, diffDays, MONTHS_SHORT, parseDate } from '../core/date.js';
 import { plural } from '../core/format.js';
 import { removeWithUndo, withUndo } from '../core/undo.js';
@@ -161,7 +162,7 @@ export function sessionMenu(id, date) {
       { icon: 'timer', label: 'Fokus-Session starten', color: '#12a594', onClick: async () => { (await import('../core/router.js')).navigate('fokus'); (await import('../services/timer.js')).timer.start({ mode: 'work', label: c?.name ?? '', courseId: se.courseId }); } },
       { icon: 'edit', label: 'Termin bearbeiten', color: '#687076', onClick: () => sessionForm(id) },
       c && { icon: 'book', label: 'Kurs bearbeiten', color: c.color, onClick: () => courseForm(c.id) },
-      c?.link && { icon: 'external', label: 'Kurs-Link öffnen', color: '#0b84e3', onClick: () => window.open(c.link, '_blank', 'noopener') },
+      c?.link && { icon: 'external', label: 'Kurs-Link öffnen', color: '#0b84e3', onClick: () => openExternal(c.link) },
     ],
   });
 }
@@ -404,7 +405,7 @@ export default {
       title: 'Stundenplan',
       items: [
         { icon: 'upload', label: 'Kalender importieren (.ics)', sub: 'Aus HISinOne, LSF, TUMonline, Stud.IP, Google …', color: '#0b84e3', onClick: importICS },
-        { icon: 'download', label: 'Als Kalender exportieren', sub: 'Stundenplan, Prüfungen & Aufgaben → Handy-Kalender', color: '#2f9e5b', onClick: () => { download('unikram.ics', exportICS(store.state), 'text/calendar'); toast('Kalenderdatei erstellt – einfach öffnen oder importieren', { type: 'success' }); } },
+        { icon: 'download', label: 'Als Kalender exportieren', sub: 'Stundenplan, Prüfungen & Aufgaben → Handy-Kalender', color: '#2f9e5b', onClick: async () => (await import('./settings.js')).exportCalendar() },
         { icon: 'grid', label: c.ui.view === 'grid' ? 'Automatische Ansicht' : 'Rasteransicht erzwingen', color: '#8e4ec6', onClick: () => { c.ui.view = c.ui.view === 'grid' ? null : 'grid'; c.rerender(); } },
         { icon: 'list', label: c.ui.view === 'list' ? 'Automatische Ansicht' : 'Listenansicht erzwingen', color: '#d99a00', onClick: () => { c.ui.view = c.ui.view === 'list' ? null : 'list'; c.rerender(); } },
         { icon: 'calendar', label: store.state.settings.showWeekend ? 'Wochenende ausblenden' : 'Wochenende anzeigen', color: '#687076', onClick: () => store.update((s) => { s.settings.showWeekend = !s.settings.showWeekend; }) },

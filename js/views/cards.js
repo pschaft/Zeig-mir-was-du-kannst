@@ -4,7 +4,8 @@ import { html, md } from '../core/html.js';
 import { icon } from '../core/icons.js';
 import { bars } from '../core/charts.js';
 import { form, toast, confirm, menu } from '../core/ui.js';
-import { uid, download, sortBy, norm, pickFile } from '../core/util.js';
+import { uid, sortBy, norm, pickFile } from '../core/util.js';
+import { saveFile } from '../services/files.js';
 import { navigate } from '../core/router.js';
 import { today, addDays, tsToDate, WD, weekday, fmtDate, DAY_MS, dayStartTs } from '../core/date.js';
 import { plural, fmtInterval, pct } from '../core/format.js';
@@ -142,8 +143,7 @@ async function bulkImport(deckId, prefill = '') {
 function exportDeck(deck) {
   const cards = store.state.cards.filter((c) => c.deckId === deck.id);
   const clean = (s) => String(s).replace(/\t/g, ' ').replace(/\n/g, '<br>');
-  download(`${deck.name.replace(/[^\p{L}\d]+/gu, '_')}.tsv`, cards.map((c) => `${clean(c.front)}\t${clean(c.back)}`).join('\n'), 'text/tab-separated-values');
-  toast('Exportiert – kompatibel mit Anki & Quizlet', { type: 'success' });
+  saveFile(`${deck.name.replace(/[^\p{L}\d]+/gu, '_')}.txt`, cards.map((c) => `${clean(c.front)}\t${clean(c.back)}`).join('\n'), 'text/plain');
 }
 
 function deckStats(state, deckId) {
@@ -317,7 +317,7 @@ export default {
         items: [
           { icon: 'edit', label: 'Umbenennen / Kurs ändern', color: '#5b5bd6', onClick: () => deckForm(deck.id) },
           { icon: 'repeat', label: 'Rückwärts pauken', sub: 'Antwort zeigen → Frage erinnern (ohne Wertung)', color: '#8e4ec6', onClick: () => navigate(`lernen/${deck.id}/session?mode=cram&reverse=1`) },
-          { icon: 'download', label: 'Exportieren (.tsv)', sub: 'Für Anki, Quizlet oder als Backup', color: '#2f9e5b', onClick: () => exportDeck(deck) },
+          { icon: 'download', label: 'Exportieren (.txt, tab-getrennt)', sub: 'Für Anki, Quizlet oder als Backup', color: '#2f9e5b', onClick: () => exportDeck(deck) },
           { icon: 'reset', label: 'Lernfortschritt zurücksetzen', color: '#d99a00', onClick: async () => {
             if (!(await confirm({ title: 'Fortschritt zurücksetzen?', message: 'Alle Karten dieses Stapels gelten danach wieder als neu.', confirmLabel: 'Zurücksetzen', danger: true }))) return;
             withUndo((st) => st.cards.forEach((x) => { if (x.deckId === deck.id) x.srs = newSrs(); }), 'Fortschritt zurückgesetzt');

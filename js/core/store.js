@@ -55,12 +55,15 @@ export const store = {
   /** Zustand verändern: store.update(s => { s.tasks.push(...) }) */
   update(fn) {
     const r = fn(state);
+    state.meta.updatedAt = Date.now();
     queueSave();
     emit();
     return r;
   },
-  replace(next) {
+  /** Ganzen Zustand ersetzen. remote: kommt aus der Synchronisation (Zeitstempel bleibt). */
+  replace(next, { remote = false } = {}) {
     state = migrate(structuredClone(next));
+    if (!remote) state.meta.updatedAt = Date.now();
     save();
     emit();
   },

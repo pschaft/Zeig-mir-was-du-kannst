@@ -1,6 +1,22 @@
-// Hash-Router: #/pfad/:param?query=1 – funktioniert auf GitHub Pages und offline.
+// Router: #/pfad/:param?query=1 – funktioniert auf GitHub Pages und offline.
+// Eingebettet (Artifact) läuft er im Speicher-Modus: Navigation ohne die Adresse zu ändern.
 
-export function parseHash(hash = location.hash) {
+let mode = 'hash';
+let memPath = '';
+
+/** Speicher-Modus aktivieren (für eingebettete Ansichten). */
+export function useMemoryRouting(initial = '') {
+  mode = 'memory';
+  memPath = String(initial).replace(/^#?\/?/, '');
+}
+
+export function isMemoryRouting() { return mode === 'memory'; }
+
+function currentHash() {
+  return mode === 'memory' ? '#/' + memPath : location.hash;
+}
+
+export function parseHash(hash = currentHash()) {
   const h = hash.replace(/^#\/?/, '');
   const qi = h.indexOf('?');
   const path = (qi >= 0 ? h.slice(0, qi) : h).replace(/\/+$/, '');
@@ -24,18 +40,21 @@ export function matchRoute(routes, path) {
   return null;
 }
 
+const fire = () => dispatchEvent(new HashChangeEvent('hashchange'));
+
 export function navigate(to, { replace = false } = {}) {
-  const target = '#/' + String(to).replace(/^#?\/?/, '');
-  if (location.hash === target) {
-    dispatchEvent(new HashChangeEvent('hashchange'));
+  const path = String(to).replace(/^#?\/?/, '');
+  if (mode === 'memory') {
+    memPath = path;
+    fire();
     return;
   }
+  const target = '#/' + path;
+  if (location.hash === target) { fire(); return; }
   if (replace) {
-    history.replaceState(null, '', target);
-    dispatchEvent(new HashChangeEvent('hashchange'));
-  } else {
-    location.hash = target;
+    try { history.replaceState(null, '', target); fire(); return; } catch { /* Sandbox: Fallback */ }
   }
+  location.hash = target;
 }
 
 export function href(path, query) {

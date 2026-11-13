@@ -47,7 +47,7 @@
   color-scheme: light;
 }
 
-[data-theme="dark"] {
+:root.dark {
   --bg: #0d0e12;
   --surface: #16171d;
   --surface-2: #1d1e25;
@@ -549,7 +549,7 @@ dialog.sheet.closing::backdrop { animation: fadeOut .2s forwards; }
   padding: 11px 12px 11px 16px; border-radius: 14px; background: #1d1e26; color: #f4f4f8; font-size: 14.5px; font-weight: 520;
   box-shadow: var(--shadow-lg); animation: toastIn .3s cubic-bezier(.2,.9,.25,1);
 }
-[data-theme="dark"] .toast { background: #2a2c38; }
+.dark .toast { background: #2a2c38; }
 .toast .i { width: 19px; height: 19px; flex: none; }
 .toast.success .i { color: #4ade80; }
 .toast.error .i { color: #f87171; }
@@ -958,3 +958,5 @@ dialog.palette::backdrop { background: rgb(8 9 14 / .4); backdrop-filter: blur(3
 .field-row > .field, .field-row > .field + .field { margin-top: 0; }
 .field-row { align-items: start; }
 .sidebar-search span, .sidebar-search .kbd { white-space: nowrap; }
+/* Eingebettet: Der Viewer polstert oben/unten bereits um die Safe-Area */
+.embed { --safe-t: 0px; }

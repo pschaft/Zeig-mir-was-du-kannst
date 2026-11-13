@@ -28,7 +28,7 @@ function actions() {
     { label: 'Neue Karteikarte', icon: 'cards', kw: 'karte vokabel', run: async () => (await import('./views/cards.js')).cardForm(null, {}) },
     { label: t.status === 'running' ? 'Fokus pausieren' : t.status === 'paused' ? 'Fokus fortsetzen' : 'Fokus-Session starten', icon: t.status === 'running' ? 'pause' : 'play', kw: 'pomodoro timer konzentration', run: () => { if (t.status === 'idle') navigate('fokus'); timer.toggle(); } },
     { label: 'Fällige Karteikarten lernen', icon: 'brain', kw: 'wiederholen lernen', run: () => navigate('lernen/alle/session') },
-    { label: 'Hell/Dunkel umschalten', icon: 'moon', kw: 'theme dark mode design', run: () => store.update((s) => { s.settings.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'; }) },
+    { label: 'Hell/Dunkel umschalten', icon: 'moon', kw: 'theme dark mode design', run: () => store.update((s) => { s.settings.theme = document.documentElement.classList.contains('dark') ? 'light' : 'dark'; }) },
     { label: 'Backup exportieren', icon: 'download', kw: 'sichern export json', run: async () => (await import('./views/settings.js')).exportBackup() },
     { label: 'Tastenkürzel anzeigen', icon: 'zap', kw: 'shortcuts hilfe', run: () => showShortcuts() },
   ];

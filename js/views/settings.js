@@ -3,7 +3,10 @@ import { store } from '../core/store.js';
 import { html } from '../core/html.js';
 import { icon } from '../core/icons.js';
 import { form, toast, confirm } from '../core/ui.js';
-import { download, pickFile } from '../core/util.js';
+import { pickFile } from '../core/util.js';
+import { saveFile } from '../services/files.js';
+import { sync, syncBadge } from '../services/sync.js';
+import { EMBED } from '../core/env.js';
 import { navigate } from '../core/router.js';
 import { today, fmtDate, tsToDate, diffDays } from '../core/date.js';
 import { plural } from '../core/format.js';
@@ -12,12 +15,13 @@ import { applyDemo } from '../logic/demo.js';
 import { exportICS } from '../logic/ics.js';
 import { requestPermission, notificationsSupported } from '../services/notify.js';
 
-export function exportBackup() {
+export async function exportBackup() {
   const s = store.snapshot();
   s.meta.exportedAt = Date.now();
-  download(`unikram-backup-${today()}.json`, JSON.stringify(s, null, 1), 'application/json');
+  const ok = await saveFile(`unikram-backup-${today()}.json`, JSON.stringify(s, null, 1), 'application/json');
+  if (!ok) return;
   store.update((st) => { st.meta.lastBackup = Date.now(); });
-  toast('Backup gespeichert 💾', { type: 'success' });
+  if (!EMBED) toast('Backup gespeichert 💾', { type: 'success' });
 }
 
 export async function importBackup() {
@@ -55,6 +59,11 @@ async function breakForm(i) {
   });
 }
 
+export async function exportCalendar() {
+  const ok = await saveFile('unikram.ics', exportICS(store.state), 'text/calendar', { embedNote: 'Kalenderdateien kann diese Ansicht nicht direkt speichern.' });
+  if (ok && !EMBED) toast('Kalenderdatei erstellt – öffnen oder in Google/Apple Kalender importieren', { type: 'success' });
+}
+
 const row = (title, desc, control) => html`<div class="settings-row"><div class="sr-main"><div class="sr-title">${title}</div>${desc ? html`<div class="sr-desc">${desc}</div>` : ''}</div>${control}</div>`;
 const sw = (path, on) => html`<span class="switch"><input type="checkbox" ${on ? 'checked' : ''} data-change="set" data-path="${path}" data-type="bool" aria-label="${path}"><span></span></span>`;
 
@@ -68,8 +77,8 @@ export default {
     const notif = notificationsSupported() ? Notification.permission : 'unsupported';
     const kb = Math.round(store.sizeBytes() / 1024);
     return html`
-      <header class="page-head"><div class="titles"><h1>Einstellungen</h1><p class="page-sub">Alles bleibt lokal auf diesem Gerät</p></div></header>
-      ${hasData && (backupAge == null || backupAge > 30) ? html`<div class="banner warn mb-16">${icon('alert')}<span>${backupAge == null ? 'Du hast noch kein Backup erstellt.' : `Dein letztes Backup ist ${backupAge} Tage alt.`} Da alles nur auf diesem Gerät liegt, lohnt sich ein Export ab und zu. <button class="btn btn-xs btn-outline" data-action="backup" style="margin-left:4px">Jetzt sichern</button></span></div>` : ''}
+      <header class="page-head"><div class="titles"><h1>Einstellungen</h1><p class="page-sub">${EMBED ? 'Profil, Semester, Design & Daten' : 'Alles bleibt lokal auf diesem Gerät'}</p></div></header>
+      ${!EMBED && hasData && (backupAge == null || backupAge > 30) ? html`<div class="banner warn mb-16">${icon('alert')}<span>${backupAge == null ? 'Du hast noch kein Backup erstellt.' : `Dein letztes Backup ist ${backupAge} Tage alt.`} Da alles nur auf diesem Gerät liegt, lohnt sich ein Export ab und zu. <button class="btn btn-xs btn-outline" data-action="backup" style="margin-left:4px">Jetzt sichern</button></span></div>` : ''}
       <div class="grid grid-2">
         <section class="card">
           <div class="card-head"><span class="card-title">${icon('smile')} Profil</span></div>
@@ -119,8 +128,10 @@ export default {
         </section>
 
         <section class="card">
-          <div class="card-head"><span class="card-title">${icon('lock')} Daten & Backup</span></div>
-          <p class="small muted mb-12">Unikram speichert alles nur in diesem Browser (${kb} KB). Kein Konto, keine Cloud, kein Tracking.${s.meta.lastBackup ? ` Letztes Backup: ${fmtDate(tsToDate(s.meta.lastBackup), 'numeric')}.` : ''}</p>
+          <div class="card-head"><span class="card-title">${icon('lock')} Daten & Backup</span>${EMBED ? syncBadge() : ''}</div>
+          ${EMBED ? html`<p class="small muted mb-12">${sync.available ? html`Deine Daten werden in deinem privaten Bereich synchronisiert – öffne diese Seite auf Handy und Laptop und alles ist überall gleich.${sync.lastSyncAt ? ` Zuletzt: ${fmtDate(tsToDate(sync.lastSyncAt), 'numeric')}, ${new Date(sync.lastSyncAt).toTimeString().slice(0, 5)} Uhr.` : ''}` : 'Synchronisierung ist in dieser Ansicht nicht verfügbar – Daten bleiben in diesem Browser.'} ${sync.message}</p>
+            ${sync.available ? html`<button class="btn btn-sm btn-soft mb-12" data-action="sync-now">${icon('repeat')} Jetzt synchronisieren</button>` : ''}`
+          : html`<p class="small muted mb-12">Unikram speichert alles nur in diesem Browser (${kb} KB). Kein Konto, keine Cloud, kein Tracking.${s.meta.lastBackup ? ` Letztes Backup: ${fmtDate(tsToDate(s.meta.lastBackup), 'numeric')}.` : ''}</p>`}
           <div class="list-actions">
             <button class="btn btn-soft" data-action="backup">${icon('download')} Backup exportieren</button>
             <button class="btn btn-outline" data-action="restore">${icon('upload')} Backup laden</button>
@@ -164,7 +175,8 @@ export default {
     },
     backup: () => exportBackup(),
     restore: () => importBackup(),
-    ics: () => { download('unikram.ics', exportICS(store.state), 'text/calendar'); toast('Kalenderdatei erstellt', { type: 'success' }); },
+    ics: () => exportCalendar(),
+    'sync-now': () => sync.now(),
     shortcuts: async () => (await import('../palette.js')).showShortcuts(),
     demo: async () => {
       if (!(await confirm({ title: 'Beispieldaten laden?', message: 'Stundenplan, Aufgaben, Karteikarten, Noten, Budget usw. werden durch Beispieldaten ersetzt. Profil und Einstellungen bleiben.', confirmLabel: 'Laden', danger: true }))) return;

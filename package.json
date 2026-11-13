@@ -2,12 +2,18 @@
   "name": "unikram",
   "version": "1.0.0",
   "private": true,
-  "description": "Unikram – die Alltags-App fürs Studium: Stundenplan, Aufgaben, Fokus-Timer, Karteikarten, Noten, Budget, WG-Kasse, Lernplan und mehr. Offline-fähige PWA ohne Abhängigkeiten.",
+  "description": "Unikram – die Alltags-App fürs Studium: Stundenplan, Aufgaben, Fokus-Timer, Karteikarten, Noten, Budget, WG-Kasse, Lernplan und mehr. Offline-fähige PWA ohne Laufzeit-Abhängigkeiten.",
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.js",
+    "test:e2e": "node tests/e2e/app.e2e.cjs",
     "serve": "python3 -m http.server 8080",
-    "build:sw": "node scripts/build-sw.mjs"
+    "build": "node scripts/build-sw.mjs && node scripts/build-single.mjs",
+    "build:sw": "node scripts/build-sw.mjs",
+    "build:icons": "node scripts/build-icons.cjs"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "esbuild": "^0.24.2"
+  }
 }

@@ -1,5 +1,5 @@
 // Automatisch erzeugt von scripts/build-sw.mjs – nicht von Hand bearbeiten.
-const VERSION = 'ae38284e43';
+const VERSION = 'a68e21be44';
 const CACHE = 'unikram-' + VERSION;
 const ASSETS = [
   "./",
@@ -11,6 +11,7 @@ const ASSETS = [
   "js/core/charts.js",
   "js/core/confetti.js",
   "js/core/date.js",
+  "js/core/env.js",
   "js/core/format.js",
   "js/core/html.js",
   "js/core/icons.js",
@@ -31,11 +32,14 @@ const ASSETS = [
   "js/logic/split.js",
   "js/logic/srs.js",
   "js/logic/state.js",
+  "js/logic/syncformat.js",
   "js/logic/tasks.js",
   "js/logic/timetable.js",
   "js/palette.js",
+  "js/services/files.js",
   "js/services/notify.js",
   "js/services/reminders.js",
+  "js/services/sync.js",
   "js/services/timer.js",
   "js/views/budget.js",
   "js/views/cards.js",

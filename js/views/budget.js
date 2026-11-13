@@ -4,7 +4,8 @@ import { html } from '../core/html.js';
 import { icon } from '../core/icons.js';
 import { bars, donut } from '../core/charts.js';
 import { form, toast, menu, sheet, confirm } from '../core/ui.js';
-import { uid, download, groupBy, sortBy } from '../core/util.js';
+import { uid, groupBy, sortBy } from '../core/util.js';
+import { saveFile } from '../services/files.js';
 import { today, monthKey, addMonths, monthLabel, fmtDate, relDay, MONTHS_SHORT } from '../core/date.js';
 import { fmtMoney, plural, pct } from '../core/format.js';
 import { removeWithUndo } from '../core/undo.js';
@@ -150,8 +151,7 @@ function exportCSV() {
   for (const t of sortBy(s.budget.transactions, (x) => x.date)) {
     rows.push([t.date, t.type === 'income' ? 'Einnahme' : 'Ausgabe', cm.get(t.categoryId)?.name ?? '', `"${(t.note ?? '').replace(/"/g, '""')}"`, ((t.type === 'income' ? 1 : -1) * t.amount / 100).toFixed(2).replace('.', ',')].join(';'));
   }
-  download(`unikram-budget-${today()}.csv`, '﻿' + rows.join('\n'), 'text/csv');
-  toast('CSV exportiert (öffnet sich in Excel/Numbers)', { type: 'success' });
+  saveFile(`unikram-budget-${today()}.csv`, '\uFEFF' + rows.join('\n'), 'text/csv');
 }
 
 export default {
