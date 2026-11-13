@@ -49,9 +49,19 @@ export function monthSummary(budget, key, base = today()) {
   // Tagesbudget für heute: was heute noch geht (ohne die heutigen Ausgaben doppelt zu zählen)
   const perDayStart = daysLeft > 0 ? Math.floor((remaining + todaySpent - fixedAhead) / daysLeft) : 0;
   const leftToday = perDayStart - todaySpent;
+  // Tempo nur für variable Ausgaben bewerten – Fixkosten (Miete am 1.) würden es verzerren
+  let fixedBooked = 0;
+  for (const t of txs) if (t.type === 'expense' && t.recurringId) fixedBooked += t.amount;
+  const fixedTotal = fixedBooked + fixedAhead;
+  const pace = dim ? day / dim : 0;
+  const variableSpent = expenses - fixedBooked;
+  const variableBudget = Math.max(0, limit - fixedTotal);
+  const expectedByNow = fixedBooked + variableBudget * pace;
+  const tooFast = isCurrent && limit > 0 && variableSpent > variableBudget * pace * 1.1 + 500;
   return {
     key, txs, expenses, income, balance: income - expenses, byCat, byDay, limit, remaining,
-    daysLeft, perDay, fixedAhead, dim, day, pace: dim ? day / dim : 0, isCurrent, todaySpent, leftToday,
+    daysLeft, perDay, fixedAhead, dim, day, pace, isCurrent, todaySpent, leftToday,
+    fixedBooked, variableSpent, variableBudget, expectedByNow, tooFast,
   };
 }
 

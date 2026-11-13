@@ -1,0 +1,27 @@
+{
+  "name": "Unikram – Dein Studium in einer App",
+  "short_name": "Unikram",
+  "description": "Stundenplan, Aufgaben, Fokus-Timer, Karteikarten, Noten, Budget, WG-Kasse und Lernplan – offline und privat.",
+  "id": "./",
+  "start_url": "./#/heute",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "lang": "de",
+  "dir": "ltr",
+  "background_color": "#f4f5f9",
+  "theme_color": "#5b5bd6",
+  "categories": ["education", "productivity", "finance"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Fokus starten", "short_name": "Fokus", "url": "./#/fokus", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Aufgaben", "short_name": "Aufgaben", "url": "./#/aufgaben", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Karteikarten lernen", "short_name": "Lernen", "url": "./#/lernen/alle/session", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Budget", "short_name": "Budget", "url": "./#/budget", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

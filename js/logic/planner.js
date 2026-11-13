@@ -71,21 +71,8 @@ export function generatePlan({ exams, availability, start, blockMinutes = 60, us
     return s;
   };
 
-  for (const d of days) {
-    let c = cap.get(d) ?? 0;
-
-    // 2) Wiederholungen
-    for (let i = 0; i < pendingReviews.length && c >= 15;) {
-      const r = pendingReviews[i];
-      if (r.date > d) { i++; continue; }
-      if (r.exam.date <= d) { pendingReviews.splice(i, 1); continue; }
-      const m = Math.min(r.minutes, c);
-      push(d, r.exam, r.topic, 'review', m, `${r.topic.name} wiederholen`);
-      c -= m;
-      pendingReviews.splice(i, 1);
-    }
-
-    // 3) Lernen nach Dringlichkeit
+  /** Lernblöcke nach Dringlichkeit verteilen; criticalOnly = nur Prüfungen, die sonst nicht zu schaffen sind. */
+  const learn = (d, c, criticalOnly) => {
     let guard = 0;
     while (c > 0 && guard++ < 50) {
       const candidates = list.filter((e) => e.date > d && e.topics.some((t) => t.remaining > 0));
@@ -96,8 +83,9 @@ export function generatePlan({ exams, availability, start, blockMinutes = 60, us
         const score = rem / Math.max(1, capacityUntil(e, d, c));
         if (score > bestScore) { best = e; bestScore = score; }
       }
+      if (criticalOnly && bestScore < 0.85) break;
       const topic = best.topics.find((t) => t.remaining > 0);
-      let chunk = Math.min(blockMinutes, topic.remaining, c);
+      const chunk = Math.min(blockMinutes, topic.remaining, c);
       if (chunk < minBlock && topic.remaining > chunk) break;
       push(d, best, topic, 'learn', chunk, topic.name);
       topic.remaining -= chunk;
@@ -110,6 +98,28 @@ export function generatePlan({ exams, availability, start, blockMinutes = 60, us
         }
       }
     }
+    return c;
+  };
+
+  for (const d of days) {
+    let c = cap.get(d) ?? 0;
+
+    // 2) Zeitkritische Prüfungen zuerst (sonst fressen Wiederholungen anderer Fächer die Zeit)
+    c = learn(d, c, true);
+
+    // 3) Fällige Wiederholungen
+    for (let i = 0; i < pendingReviews.length && c >= 15;) {
+      const r = pendingReviews[i];
+      if (r.date > d) { i++; continue; }
+      if (r.exam.date <= d) { pendingReviews.splice(i, 1); continue; }
+      const m = Math.min(r.minutes, c);
+      push(d, r.exam, r.topic, 'review', m, `${r.topic.name} wiederholen`);
+      c -= m;
+      pendingReviews.splice(i, 1);
+    }
+
+    // 4) Restliche Zeit: Lernen nach Dringlichkeit
+    c = learn(d, c, false);
     cap.set(d, c);
   }
 

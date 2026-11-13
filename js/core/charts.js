@@ -6,10 +6,10 @@ import { esc } from './html.js';
  * Balkendiagramm.
  * data: [{ label, value, color?, highlight?, title?, segments?: [{value, color}] }]
  */
-export function bars({ data, height = 120, goal = null, format = (v) => String(Math.round(v)), showValues = true, max = null }) {
+export function bars({ data, height = 120, goal = null, format = (v) => String(Math.round(v)), showValues = true, max = null, strong = false }) {
   const m = Math.max(max ?? 0, goal ?? 0, ...data.map((d) => d.value || 0), 1);
   const goalPx = goal ? Math.round((goal / m) * height) : null;
-  return html`<div class="bars" style="--h:${height}px">
+  return html`<div class="bars ${strong ? 'all-strong' : ''} ${data.length > 9 ? 'dense' : ''}" style="--h:${height}px">
     ${goalPx != null ? html`<div class="bars-goal" style="bottom:${goalPx + 24}px" title="Ziel"></div>` : ''}
     ${data.map((d) => {
       const h = Math.round(((d.value || 0) / m) * height);
@@ -70,7 +70,11 @@ export function heatmap({ days, color = 'var(--accent)', monthLabels = true }) {
       const d = days[w * 7];
       if (!d) continue;
       const mo = Number(d.date.slice(5, 7));
-      if (mo !== last) { months.push({ w, label: ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'][mo - 1] }); last = mo; }
+      if (mo === last) continue;
+      last = mo;
+      // Labels brauchen Platz: zu dicht am vorherigen → vorheriges ersetzen
+      if (months.length && w - months.at(-1).w < 3) months.pop();
+      months.push({ w, label: ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'][mo - 1] });
     }
   }
   return html`<div class="hm-wrap" style="--c:${color};--weeks:${weeks}">

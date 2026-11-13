@@ -938,3 +938,23 @@ dialog.palette::backdrop { background: rgb(8 9 14 / .4); backdrop-filter: blur(3
 .hm i.l4 { background: var(--c); }
 .hm i.off { background: transparent; box-shadow: inset 0 0 0 1px var(--border); }
 .hm i.today { outline: 1.5px solid var(--text); outline-offset: 1px; }
+.li-clickable { cursor: pointer; }
+.li-clickable:focus-visible { outline-offset: -2px; }
+
+/* ---------- Vortrags-Timer ---------- */
+.talk-display { border-radius: 26px; padding: 44px 16px; text-align: center; background: var(--surface); border: 1px solid var(--border); transition: background .6s, color .6s; }
+.talk-display .talk-time { font-size: clamp(72px, 24vw, 220px); font-weight: 800; letter-spacing: -.05em; line-height: 1; }
+.talk-display .talk-sub { font-size: 16px; font-weight: 600; opacity: .75; margin-top: 10px; }
+.talk-display.warn { background: #f7c948; color: #2a2100; border-color: transparent; }
+.talk-display.over { background: #e5484d; color: #fff; border-color: transparent; animation: pulseBg 1.2s ease-in-out infinite; }
+@keyframes pulseBg { 50% { background: #c9343a; } }
+.talk-display:fullscreen { display: flex; flex-direction: column; justify-content: center; border-radius: 0; }
+.talk-display:fullscreen .talk-time { font-size: 32vw; }
+.timer-label { overflow: hidden; text-overflow: ellipsis; max-width: 80%; display: inline-flex; color: var(--muted); }
+.choice.sm { padding: 12px 14px; }
+.bars.dense { gap: 3px; }
+.bars.dense .bar-lbl { font-size: 10px; text-overflow: clip; }
+.bars.dense .bar-val { font-size: 9.5px; }
+.field-row > .field, .field-row > .field + .field { margin-top: 0; }
+.field-row { align-items: start; }
+.sidebar-search span, .sidebar-search .kbd { white-space: nowrap; }

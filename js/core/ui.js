@@ -92,6 +92,9 @@ function renderField(f) {
     case 'checkboxes':
       control = html`<div class="toggle-grid">${f.options.map((o) => html`<label class="toggle-pill"><input type="checkbox" name="${f.name}" value="${o.value}" ${(v ?? []).map(String).includes(String(o.value)) ? 'checked' : ''}><span>${o.label}</span></label>`)}</div>`;
       break;
+    case 'pills':
+      control = html`<div class="toggle-grid">${f.options.map((o) => html`<label class="toggle-pill"><input type="radio" name="${f.name}" value="${o.value}" ${String(o.value) === String(v ?? '') ? 'checked' : ''}><span>${o.label}</span></label>`)}</div>`;
+      break;
     case 'weekdays':
       control = html`<div class="toggle-grid">${WD.map((d, i) => html`<label class="toggle-pill"><input type="checkbox" name="${f.name}" value="${i}" ${(v ?? []).map(Number).includes(i) ? 'checked' : ''}><span>${d}</span></label>`)}</div>`;
       break;
