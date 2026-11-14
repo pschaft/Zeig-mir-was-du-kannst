@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Tests & Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Unit-Tests
+        run: npm test
+      - name: Build (Service Worker + Ein-Datei-Version)
+        run: npm run build
+      - name: Ist sw.js aktuell?
+        run: |
+          if ! git diff --quiet -- sw.js; then
+            echo "::error file=sw.js::sw.js ist veraltet – bitte 'npm run build' ausführen und committen."
+            exit 1
+          fi

@@ -1,0 +1,61 @@
+name: GitHub Pages
+
+# Veröffentlicht Unikram bei jedem Push auf den Standard-Branch.
+# Einmalig nötig: Settings → Pages → Source: "GitHub Actions".
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Ist GitHub Pages aktiviert?
+        id: pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh api "repos/${{ github.repository }}/pages" --silent 2>/dev/null; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::GitHub Pages ist noch nicht aktiviert: Settings → Pages → Source: GitHub Actions. Danach diesen Workflow erneut starten."
+          fi
+      - uses: actions/checkout@v4
+        if: steps.pages.outputs.enabled == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.pages.outputs.enabled == 'true'
+        with:
+          node-version: 22
+          cache: npm
+      - if: steps.pages.outputs.enabled == 'true'
+        run: npm ci && npm test && npm run build
+      - name: Seite zusammenstellen
+        if: steps.pages.outputs.enabled == 'true'
+        run: |
+          mkdir -p _site
+          cp -r index.html manifest.webmanifest sw.js css js icons _site/
+          cp dist/unikram.html _site/unikram.html
+          touch _site/.nojekyll
+      - uses: actions/configure-pages@v5
+        if: steps.pages.outputs.enabled == 'true'
+      - uses: actions/upload-pages-artifact@v3
+        if: steps.pages.outputs.enabled == 'true'
+        with:
+          path: _site
+      - id: deployment
+        if: steps.pages.outputs.enabled == 'true'
+        uses: actions/deploy-pages@v4
