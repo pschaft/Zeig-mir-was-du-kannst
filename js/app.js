@@ -291,6 +291,13 @@ document.addEventListener('keydown', (e) => {
   if (el && e.key === 'Enter' && !e.shiftKey && !el.closest('dialog')) {
     e.preventDefault();
     dispatch(el, e, 'data-enter');
+    return;
+  }
+  // Klickbare Nicht-Buttons (role="button", Listenzeilen) per Tastatur auslösbar machen
+  const t = e.target;
+  if ((e.key === 'Enter' || e.key === ' ') && t?.matches?.('[role="button"][data-action], .li-clickable[data-action][tabindex]')) {
+    e.preventDefault();
+    t.click();
   }
 });
 
@@ -306,7 +313,7 @@ document.addEventListener('keydown', (e) => {
     if (!document.querySelector('dialog.palette')) globalActions.palette();
     return;
   }
-  if (anyDialogOpen() || document.querySelector('dialog[open]') || isTyping(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.defaultPrevented || anyDialogOpen() || document.querySelector('dialog[open]') || isTyping(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
   if (current?.mod.onKey?.(e, ctx())) return;
   const k = e.key;
   if (k === '/') { e.preventDefault(); globalActions.palette(); }

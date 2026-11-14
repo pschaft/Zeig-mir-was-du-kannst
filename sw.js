@@ -1,5 +1,5 @@
 // Automatisch erzeugt von scripts/build-sw.mjs – nicht von Hand bearbeiten.
-const VERSION = 'a68e21be44';
+const VERSION = 'b8607d0aac';
 const CACHE = 'unikram-' + VERSION;
 const ASSETS = [
   "./",

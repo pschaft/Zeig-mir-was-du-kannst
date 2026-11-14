@@ -122,7 +122,7 @@ export default {
 
         <section class="card">
           <div class="card-head"><span class="card-title">${icon('bell')} Benachrichtigungen & Töne</span></div>
-          ${row('Erinnerungen', notif === 'granted' ? '10 Min vor Vorlesungen, 30 Min vor fälligen Aufgaben (solange Unikram offen ist)' : notif === 'unsupported' ? 'Von diesem Browser nicht unterstützt' : 'Benötigt deine Erlaubnis', notif === 'granted' ? sw('settings.reminders', s.settings.reminders) : notif === 'unsupported' ? '' : html`<button class="btn btn-sm btn-soft" data-action="notif">Erlauben</button>`)}
+          ${EMBED ? '' : row('Erinnerungen', notif === 'granted' ? '10 Min vor Vorlesungen, 30 Min vor fälligen Aufgaben (solange Unikram offen ist)' : notif === 'unsupported' ? 'Von diesem Browser nicht unterstützt' : 'Benötigt deine Erlaubnis', notif === 'granted' ? sw('settings.reminders', s.settings.reminders) : notif === 'unsupported' ? '' : html`<button class="btn btn-sm btn-soft" data-action="notif">Erlauben</button>`)}
           ${row('Töne', 'Gong am Ende von Fokus-Sessions', sw('settings.sound', s.settings.sound))}
           ${row('Vibration', 'Kurzes Feedback beim Abhaken (Android)', sw('settings.haptics', s.settings.haptics))}
         </section>
